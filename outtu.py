@@ -1,5 +1,6 @@
 from abc import ABC
 from argparse import Action
+from collections import OrderedDict
 
 
 class OutFunctionsBase(ABC):
@@ -9,7 +10,7 @@ class OutFunctionsBase(ABC):
         self.name = self._get_name()
         self.number_format = number_format
 
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename: str):
         raise NotImplemented("This needs to be implemented.")
 
     def __str__(self):
@@ -20,6 +21,10 @@ class OutFunctionsBase(ABC):
         raise NotImplemented("This needs to be implemented.")
 
 
+# Sort yyyy-mm formatted dates, where it is split up into yyyy and mm. The
+# oldest should be first.
+
+
 class CSV(OutFunctionsBase):
     headers = [
         "yyyy-mm",
@@ -28,26 +33,33 @@ class CSV(OutFunctionsBase):
         "Stocks_total"
     ]
 
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename: str):
         import csv
         with open(filename, 'w', newline='') as csvfile:
             dict_writer = csv.DictWriter(csvfile, fieldnames=self.headers)
             dict_writer.writeheader()
+
             for key, values in data.items():
+                if key == "key":
+                    continue
                 dict_writer.writerow({
                     "yyyy-mm": key,
-                    "Employers_Matched_Contribution": values["Employers_Matched_Contribution"] if self.number_format == "en" else str(values["Employers_Matched_Contribution"]).replace(".", ","),
-                    "Additional_contribution": values["Additional_contribution"] if self.number_format == "en" else str(values["Additional_contribution"]).replace(".", ","),
-                    "Stocks_total": values["Stocks_total"] if self.number_format == "en" else str(values["Stocks_total"]).replace(".", ",")
+                    "Employers_Matched_Contribution": values[
+                        "Employers_Matched_Contribution"] if self.number_format == "en" else str(
+                        values["Employers_Matched_Contribution"]).replace(".", ","),
+                    "Additional_contribution": values["Additional_contribution"] if self.number_format == "en" else str(
+                        values["Additional_contribution"]).replace(".", ","),
+                    "Stocks_total": values["Stocks_total"] if self.number_format == "en" else str(
+                        values["Stocks_total"]).replace(".", ",")
                 })
 
     @staticmethod
     def _get_name():
-        return "csv"
+        return "CSV"
 
 
 class JSON(OutFunctionsBase):
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename: str):
         import json
         with open(filename, 'w') as f:
             json.dump(data, f)
@@ -58,13 +70,9 @@ class JSON(OutFunctionsBase):
 
 
 class XML(OutFunctionsBase):
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename: str):
         import xml.etree.ElementTree as ET
-        root = ET.Element("root")
-        for d in data:
-            ET.SubElement(root, "data").text = d
-        tree = ET.ElementTree(root)
-        tree.write(filename)
+        raise NotImplemented("This needs to be implemented.")
 
     @staticmethod
     def _get_name():
@@ -72,7 +80,7 @@ class XML(OutFunctionsBase):
 
 
 class YAML(OutFunctionsBase):
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename):
         import yaml
         with open(filename, 'w') as f:
             yaml.dump(data, f)
@@ -83,7 +91,7 @@ class YAML(OutFunctionsBase):
 
 
 class Pickle(OutFunctionsBase):
-    def save(self, data, filename):
+    def save(self, data: OrderedDict, filename):
         import pickle
         with open(filename, 'wb') as f:
             pickle.dump(data, f)

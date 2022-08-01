@@ -12,8 +12,8 @@ args = argparse.ArgumentParser("Get all information from sallery pdfs")
 args.add_argument("-i", "--input", help="The root directory of the pdfs", type=str, default=".")
 args.add_argument("-o", "--output", help="The output file", type=str, default="output")
 args.add_argument("-f", "--output_format",
-                  nargs=1, choices=out_functions, action=SelectOutAction,
-                  help="The output format")
+                  nargs='+', choices=out_functions, action=SelectOutAction,
+                  help="The output format", required=True)
 args.add_argument("-s", "--simple", help="Only output the stocks", action="store_true")
 args.add_argument("-v", "--verbose", help="Verbose output", choices=["info", "INFO", "WARNING", "ERROR", "CRITICAL"],
                   default="ERROR")
@@ -87,6 +87,10 @@ def main():
     if not root_dir.exists():
         raise Exception("The root directory does not exist")
     res = yoink_all_pdfs(root_dir)
+
+    sorted_res = OrderedDict(
+        sorted(res.items(), key=lambda x: float(x[0].split("-")[0]) + float(x[0].split("-")[1]) / 12))
+
     logger.info("Finished yoinking all pdfs")
 
     if argz.output:
@@ -97,7 +101,7 @@ def main():
                 outname = argz.output
                 if pathlib.Path(argz.output).suffix == "":
                     outname = argz.output + "." + out._get_name()
-                out(argz.number_format).save(res, outname)
+                out(argz.number_format).save(sorted_res, outname)
 
 
 if __name__ == '__main__':
